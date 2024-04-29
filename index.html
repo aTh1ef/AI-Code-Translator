@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbots Side by Side</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght@48,400;Material+Symbols+Rounded:opsz,wght@48,400" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            background: #1D1E23;
+        }
+
+        .chatbots-container {
+            display: flex;
+            gap: 20px; /* Space between the two containers */
+        }
+
+        .chatbot {
+            width: 420px;
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 128px 0 rgba(0,0,0,0.1),
+                        0 32px 64px -48px rgba(0,0,0,0.5);
+        }
+
+        .chatbot header {
+            padding: 16px 0;
+            text-align: center;
+            color: #fff;
+            background: #724ae8;
+        }
+
+        header h2 {
+            font-size: 1.4rem;
+        }
+
+        .chatbox {
+            overflow-y: auto;
+            height: 510px;
+            padding: 30px 20px 100px;
+        }
+
+        .chatbox .chat {
+            display: flex;
+            list-style: none;
+        }
+
+        .chatbox .outgoing {
+            justify-content: flex-end;
+            margin: 20px 0;
+        }
+
+        .chatbox .incoming {
+            justify-content: flex-start;
+            margin: 20px 0;
+        }
+
+        .chatbox .incoming span {
+            width: 32px;
+            height: 32px;
+            text-align: center;
+            line-height: 32px;
+            background: #724ae8;
+            color: #fff;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .chatbox .chat p {
+            white-space: pre-wrap;
+            padding: 12px 16px;
+            border-radius: 10px 10px 0 10px;
+            max-width: 75%;
+            font-size: 0.95rem;
+            background: #724ae8;
+            color: #fff;
+        }
+
+        .chatbox .incoming p {
+            border-radius: 10px 10px 10px 0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 5px;
+            padding: 3px 20px;
+            border-top: 1px solid #ddd;
+            background: #fff;
+            position: relative;
+        }
+
+        .chat-input textarea {
+            width: calc(100% - 50px);
+            height: 55px;
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: none;
+            outline: none;
+            resize: none;
+            background: #f9f9f9;
+        }
+
+        .chat-input span {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #724ae8;
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+    }
+    </script>
+    <script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    const genAI = new GoogleGenerativeAI("AIzaSyAMwM1unismKZbtaduQAOgdnn7MXmiY2QA");
+
+    const chatboxLeft = document.querySelector(".chatbox-left");
+    const chatboxRight = document.querySelector(".chatbox-right");
+    const chatInput = document.querySelector(".chat-input textarea");
+    const sendChatBtn = document.querySelector(".chat-input span");
+
+    let userMessage = null; // Variable to store user's message
+
+    const createChatLi = (message, className) => {
+        const chatLi = document.createElement("li");
+        chatLi.classList.add("chat", className);
+        let chatContent = className === "outgoing" ? `<p></p>` : `<span>🤖</span><p></p>`;
+        chatLi.innerHTML = chatContent;
+        chatLi.querySelector("p").textContent = message;
+        return chatLi;
+    };
+
+    const generateResponse = async (chatElement) => {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+        const requestOptions = {
+            maxOutputTokens: 100,
+            temperature: 0.7,
+            topP: 1,
+            topK: 50,
+        };
+
+        const messageElement = chatElement.querySelector("p");
+        const prompt = userMessage;
+
+        try {
+            const result = await model.generateContent(prompt, requestOptions);
+            const response = await result.response;
+            messageElement.textContent = await response.text();
+        } catch (error) {
+            console.error("Error generating response:", error);
+            messageElement.textContent = "Oops! Something went wrong. Please try again.";
+        } finally {
+            chatboxRight.scrollTo(0, chatboxRight.scrollHeight);
+        }
+    };
+
+    const handleChat = () => {
+        userMessage = chatInput.value.trim();
+        if (!userMessage) return;
+
+        chatInput.value = "";
+        chatInput.style.height = "55px";
+
+        chatboxLeft.appendChild(createChatLi(userMessage, "outgoing"));
+        chatboxLeft.scrollTo(0, chatboxLeft.scrollHeight);
+
+        setTimeout(() => {
+            const incomingChatLi = createChatLi("Thinking...", "incoming");
+            chatboxRight.appendChild(incomingChatLi);
+            generateResponse(incomingChatLi);
+        }, 600);
+    };
+
+    chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 800) {
+            e.preventDefault();
+            handleChat();
+        }
+    });
+
+    sendChatBtn.addEventListener("click", handleChat);
+    </script>
+</head>
+<body>
+    <!-- Parent container for two chatbots -->
+    <div class="chatbots-container">
+        <!-- Left chatbot (user input) -->
+        <div class="chatbot">
+            <header>
+                <h2>Chatbot 1</h2>
+            </header>
+            <ul class="chatbox-left">
+                <!-- Initial greeting -->
+                <li class="chat incoming">
+                    <span>🤖</span>
+                    <p>Hi there 👋<br>How can I help you today?</p>
+                </li>
+            </ul>
+            <div class="chat-input">
+                <textarea placeholder="Enter a message..." spellcheck="false"></textarea>
+                <span class="material-symbols-rounded">send</span> <!-- Send icon -->
+            </div>
+        </div>
+
+        <!-- Right chatbot (AI-generated output) -->
+        <div class="chatbot">
+            <header>
+                <h2>Chatbot 2</h2>
+            </header>
+            <ul class="chatbox-right">
+                <!-- This container displays AI-generated output -->
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
