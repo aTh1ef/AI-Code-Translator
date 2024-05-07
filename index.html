@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbots Side by Side</title>
+    <title>Connected Chatbots</title>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght@48,400;Material+Symbols+Rounded:opsz,wght@48,400" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -23,9 +23,9 @@
             background: #1D1E23;
         }
 
-        .chatbots-container {
+        .chatbots {
             display: flex;
-            gap: 20px; /* Space between the two containers */
+            gap: 20px;
         }
 
         .chatbot {
@@ -112,6 +112,7 @@
             outline: none;
             resize: none;
             background: #f9f9f9;
+            transition: all 0.2s ease;
         }
 
         .chat-input span {
@@ -137,27 +138,20 @@
     <script type="module">
     import { GoogleGenerativeAI } from "@google/generative-ai";
 
-    const genAI = new GoogleGenerativeAI("enter your gemini api key here");
+    const genAI = new GoogleGenerativeAI("ENTER YOUR API KEY HERE");
 
-    const chatboxLeft = document.querySelector(".chatbox-left");
-    const chatboxRight = document.querySelector(".chatbox-right");
-    const chatInput = document.querySelector(".chat-input textarea");
-    const sendChatBtn = document.querySelector(".chat-input span");
-
-    let userMessage = null; // Variable to store user's message
-
-    const createChatLi = (message, className) => {
+    const createChatLi = (message, className, isOutgoing = true) => {
         const chatLi = document.createElement("li");
-        chatLi.classList.add("chat", className);
-        let chatContent = className === "outgoing" ? `<p></p>` : `<span>🤖</span><p></p>`;
-        chatLi.innerHTML = chatContent;
-        chatLi.querySelector("p").textContent = message;
+        chatLi.classList.add("chat", `${className}`);
+        const content = isOutgoing
+            ? `<p>${message}</p>`
+            : `<span>🤖</span><p>${message}</p>`;
+        chatLi.innerHTML = content;
         return chatLi;
     };
 
-    const generateResponse = async (chatElement) => {
+    const generateResponse = async (prompt, chatbox) => {
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
         const requestOptions = {
             maxOutputTokens: 100,
             temperature: 0.7,
@@ -165,58 +159,67 @@
             topK: 50,
         };
 
-        const messageElement = chatElement.querySelector("p");
-        const prompt = userMessage;
+        const incomingChat = createChatLi("Thinking...", "incoming", false);
+        chatbox.appendChild(incomingChat);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
 
         try {
             const result = await model.generateContent(prompt, requestOptions);
             const response = await result.response;
-            messageElement.textContent = await response.text();
+            incomingChat.querySelector("p").textContent = response.text();
         } catch (error) {
-            console.error("Error generating response:", error);
-            messageElement.textContent = "Oops! Something went wrong. Please try again.";
-        } finally {
-            chatboxRight.scrollTo(0, chatboxRight.scrollHeight);
+            incomingChat.querySelector("p"). textContent = "Oops! Something went wrong.";
         }
     };
 
-    const handleChat = () => {
-        userMessage = chatInput.value.trim();
+    const handleChat = (chatbox1, chatbox2, chatInput) => {
+        const userMessage = chatInput.value.trim();
         if (!userMessage) return;
 
         chatInput.value = "";
         chatInput.style.height = "55px";
 
-        chatboxLeft.appendChild(createChatLi(userMessage, "outgoing"));
-        chatboxLeft.scrollTo(0, chatboxLeft.scrollHeight);
+        const outgoingChat = createChatLi(userMessage, "outgoing");
+        chatbox1.appendChild(outgoingChat);
+        chatbox1.scrollTo(0, chatbox1.scrollHeight);
 
-        setTimeout(() => {
-            const incomingChatLi = createChatLi("Thinking...", "incoming");
-            chatboxRight.appendChild(incomingChatLi);
-            generateResponse(incomingChatLi);
-        }, 600);
+        generateResponse(userMessage, chatbox2); // Response goes to the second chatbot
     };
+
+    const firstChatbot = document.querySelectorAll(".chatbot")[0];
+    const secondChatbot = document.querySelectorAll(".chatbot")[1];
+
+    const chatbox1 = firstChatbot.querySelector(".chatbox");
+    const chatbox2 = secondChatbot.querySelector(".chatbox");
+
+    const chatInput = firstChatbot.querySelector(".chat-input textarea");
+    const sendChatBtn = firstChatbot.querySelector(".chat-input span");
+
+    chatInput.addEventListener("input", () => {
+        chatInput.style.height = "55px";
+        chatInput.style.height = `${chatInput.scrollHeight}px`;
+    });
 
     chatInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 800) {
             e.preventDefault();
-            handleChat();
+            handleChat(chatbox1, chatbox2, chatInput); // Use the first chatbot input to trigger response in the second chatbot
         }
     });
 
-    sendChatBtn.addEventListener("click", handleChat);
+    sendChatBtn.addEventListener("click", () => {
+        handleChat(chatbox1, chatbox2, chatInput);
+    });
     </script>
 </head>
 <body>
-    <!-- Parent container for two chatbots -->
-    <div class="chatbots-container">
-        <!-- Left chatbot (user input) -->
+    <div class="chatbots">
+        <!-- First chatbot (input) -->
         <div class="chatbot">
             <header>
-                <h2>Chatbot 1</h2>
+                <h2>Chatbot 1 (Input)</h2>
             </header>
-            <ul class="chatbox-left">
-                <!-- Initial greeting -->
+            <ul class="chatbox">
                 <li class="chat incoming">
                     <span>🤖</span>
                     <p>Hi there 👋<br>How can I help you today?</p>
@@ -224,17 +227,20 @@
             </ul>
             <div class="chat-input">
                 <textarea placeholder="Enter a message..." spellcheck="false"></textarea>
-                <span class="material-symbols-rounded">send</span> <!-- Send icon -->
+                <span class="material-symbols-rounded">send</span>
             </div>
         </div>
 
-        <!-- Right chatbot (AI-generated output) -->
+        <!-- Second chatbot (output) -->
         <div class="chatbot">
             <header>
-                <h2>Chatbot 2</h2>
+                <h2>Chatbot 2 (Output)</h2>
             </header>
-            <ul class="chatbox-right">
-                <!-- This container displays AI-generated output -->
+            <ul class="chatbox">
+                <li class="chat incoming">
+                    <span>🤖</span>
+                    <p>Hi there 👋<br>Welcome!</p>
+                </li>
             </ul>
         </div>
     </div>
