@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -246,3 +247,253 @@
     </div>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connected Chatbots</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght@48,400;Material+Symbols+Rounded:opsz,wght@48,400" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            background: #1D1E23;
+        }
+
+        .chatbots {
+            display: flex;
+            gap: 20px;
+        }
+
+        .chatbot {
+            width: 420px;
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 128px 0 rgba(0,0,0,0.1),
+                        0 32px 64px -48px rgba(0,0,0,0.5);
+        }
+
+        .chatbot header {
+            padding: 16px 0;
+            text-align: center;
+            color: #fff;
+            background: #724ae8;
+        }
+
+        header h2 {
+            font-size: 1.4rem;
+        }
+
+        .chatbox {
+            overflow-y: auto;
+            height: 510px;
+            padding: 30px 20px 100px;
+        }
+
+        .chatbox .chat {
+            display: flex;
+            list-style: none;
+        }
+
+        .chatbox .outgoing {
+            justify-content: flex-end;
+            margin: 20px 0;
+        }
+
+        .chatbox .incoming {
+            justify-content: flex-start;
+            margin: 20px 0;
+        }
+
+        .chatbox .incoming span {
+            width: 32px;
+            height: 32px;
+            text-align: center;
+            line-height: 32px;
+            background: #724ae8;
+            color: #fff;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .chatbox .chat p {
+            white-space: pre-wrap;
+            padding: 12px 16px;
+            border-radius: 10px 10px 0 10px;
+            max-width: 75%;
+            font-size: 0.95rem;
+            background: #724ae8;
+            color: #fff;
+        }
+
+        .chatbox .incoming p {
+            border-radius: 10px 10px 10px 0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 5px;
+            padding: 3px 20px;
+            border-top: 1px solid #ddd;
+            background: #fff;
+            position: relative;
+        }
+
+        .chat-input textarea {
+            width: calc(100% - 50px);
+            height: 55px;
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: none;
+            outline: none;
+            resize: none;
+            background: #f9f9f9;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input span {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #724ae8;
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+    }
+    </script>
+    <script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    const genAI = new GoogleGenerativeAI("ENTER YOUR API KEY HERE");
+
+    const createChatLi = (message, className, isOutgoing = true) => {
+        const chatLi = document.createElement("li");
+        chatLi.classList.add("chat", `${className}`);
+        const content = isOutgoing
+            ? `<p>${message}</p>`
+            : `<span>🤖</span><p>${message}</p>`;
+        chatLi.innerHTML = content;
+        return chatLi;
+    };
+
+    const generateResponse = async (prompt, chatbox) => {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const requestOptions = {
+            maxOutputTokens: 100,
+            temperature: 0.7,
+            topP: 1,
+            topK: 50,
+        };
+
+        const incomingChat = createChatLi("Thinking...", "incoming", false);
+        chatbox.appendChild(incomingChat);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+
+        try {
+            const result = await model.generateContent(prompt, requestOptions);
+            const response = await result.response;
+            incomingChat.querySelector("p").textContent = response.text();
+        } catch (error) {
+            incomingChat.querySelector("p"). textContent = "Oops! Something went wrong.";
+        }
+    };
+
+    const handleChat = (chatbox1, chatbox2, chatInput) => {
+        const userMessage = chatInput.value.trim();
+        if (!userMessage) return;
+
+        chatInput.value = "";
+        chatInput.style.height = "55px";
+
+        const outgoingChat = createChatLi(userMessage, "outgoing");
+        chatbox1.appendChild(outgoingChat);
+        chatbox1.scrollTo(0, chatbox1.scrollHeight);
+
+        generateResponse(userMessage, chatbox2); // Response goes to the second chatbot
+    };
+
+    const firstChatbot = document.querySelectorAll(".chatbot")[0];
+    const secondChatbot = document.querySelectorAll(".chatbot")[1];
+
+    const chatbox1 = firstChatbot.querySelector(".chatbox");
+    const chatbox2 = secondChatbot.querySelector(".chatbox");
+
+    const chatInput = firstChatbot.querySelector(".chat-input textarea");
+    const sendChatBtn = firstChatbot.querySelector(".chat-input span");
+
+    chatInput.addEventListener("input", () => {
+        chatInput.style.height = "55px";
+        chatInput.style.height = `${chatInput.scrollHeight}px`;
+    });
+
+    chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 800) {
+            e.preventDefault();
+            handleChat(chatbox1, chatbox2, chatInput); // Use the first chatbot input to trigger response in the second chatbot
+        }
+    });
+
+    sendChatBtn.addEventListener("click", () => {
+        handleChat(chatbox1, chatbox2, chatInput);
+    });
+    </script>
+</head>
+<body>
+    <div class="chatbots">
+        <!-- First chatbot (input) -->
+        <div class="chatbot">
+            <header>
+                <h2>Chatbot 1 (Input)</h2>
+            </header>
+            <ul class="chatbox">
+                <li class="chat incoming">
+                    <span>🤖</span>
+                    <p>Hi there 👋<br>How can I help you today?</p>
+                </li>
+            </ul>
+            <div class="chat-input">
+                <textarea placeholder="Enter a message..." spellcheck="false"></textarea>
+                <span class="material-symbols-rounded">send</span>
+            </div>
+        </div>
+
+        <!-- Second chatbot (output) -->
+        <div class="chatbot">
+            <header>
+                <h2>Chatbot 2 (Output)</h2>
+            </header>
+            <ul class="chatbox">
+                <li class="chat incoming">
+                    <span>🤖</span>
+                    <p>Hi there 👋<br>Welcome!</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+>>>>>>> a73f4d7f8584958134cde85fb988c173311d979a
