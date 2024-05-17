@@ -1,7 +1,3 @@
-Sure! Here is the updated README file for your project:
-
----
-
 # AI Code Translator - BridgeX
 
 AI Code Translator is a web application that showcases two chatbots side-by-side, enabling users to input code or text into the left chatbot and view AI-generated translations or responses on the right. It uses Google Generative AI (Gemini model) to create dynamic responses.
